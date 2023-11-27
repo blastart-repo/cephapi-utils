@@ -54,7 +54,7 @@ func GetClusterInfo(clusterName string) (*proto.Cluster, error) {
 
 func ConnectgRPC() (*grpc.ClientConn, error) {
 	var conn *grpc.ClientConn
-	conn, err := grpc.Dial(":9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("data-service:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
