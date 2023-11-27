@@ -1,0 +1,26 @@
+syntax = "proto3";
+package proto;
+
+option go_package="./proto";
+
+message Cluster {
+  string clustername = 1;
+  string accesskey = 2;
+  string accesssecret = 3;
+  string endpointurl = 4;
+}
+
+message ClusterIn {
+  string clustername = 1;
+}
+
+message Empty{
+}
+
+service ClusterService {
+  rpc GetCluster(ClusterIn) returns (Cluster) {}
+  rpc ListClusters(Empty) returns (stream Cluster) {}
+  rpc AddCluster(Cluster) returns (Cluster) {}
+  rpc UpdateCluster(Cluster) returns (Cluster) {}
+  rpc RemoveCluster(ClusterIn) returns (Empty) {}
+}
