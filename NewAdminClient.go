@@ -3,6 +3,7 @@ package cautils
 import (
 	"context"
 	"fmt"
+
 	"github.com/blastart-repo/cephapi-utils/proto"
 	"github.com/ceph/go-ceph/rgw/admin"
 	"google.golang.org/grpc"
@@ -54,7 +55,7 @@ func GetClusterInfo(clusterName string) (*proto.Cluster, error) {
 
 func ConnectgRPC() (*grpc.ClientConn, error) {
 	var conn *grpc.ClientConn
-	conn, err := grpc.Dial("data-service:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("cephapi-data:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
