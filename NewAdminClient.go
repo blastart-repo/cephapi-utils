@@ -17,48 +17,48 @@ type Cluster struct {
 	EndpointURL  string `json:"endpoint_url" gorm:"unique"`
 }
 
-func NewAdminClient(clusterName string) (*admin.API, error) {
-	resp, err := GetClusterInfo(clusterName)
+type NewClient struct {
+	client *grpc.ClientConn
+}
+
+type SrvConnData struct {
+	srvName string
+	srvPort string
+}
+
+func (c *NewClient) NewAdminClient(clusterName string) (*admin.API, error) {
+	resp, err := c.GetClusterInfo(clusterName)
 	if err != nil {
 		return nil, err
 	}
 	fmt.Println(resp)
-	c, err := admin.New(resp.GetEndpointurl(), resp.GetAccesskey(), resp.GetAccesssecret(), nil)
+	client, err := admin.New(resp.GetEndpointurl(), resp.GetAccesskey(), resp.GetAccesssecret(), nil)
 	if err != nil {
 		return nil, err
 	}
-	return c, nil
+	return client, nil
 
 }
 
-func GetClusterInfo(clusterName string) (*proto.Cluster, error) {
-	conn, err := ConnectgRPC()
-	if err != nil {
-		return nil, err
-	}
-	client := proto.NewClusterServiceClient(conn)
+func (c *NewClient) GetClusterInfo(clusterName string) (*proto.Cluster, error) {
+	client := proto.NewClusterServiceClient(c.client)
 
 	clr, err := client.GetCluster(context.Background(), &proto.ClusterIn{Clustername: clusterName})
 	if err != nil {
 		return nil, err
 	}
 
-	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
-		if err != nil {
-			return
-		}
-	}(conn)
-
 	return clr, nil
 }
 
-func ConnectgRPC() (*grpc.ClientConn, error) {
-	var conn *grpc.ClientConn
-	conn, err := grpc.Dial("cephapi-data:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+func ConnectgRPC(srvdata *SrvConnData) (*NewClient, error) {
+
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", srvdata.srvName, srvdata.srvPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
 
-	return conn, nil
+	return &NewClient{
+		client: conn,
+	}, nil
 }
