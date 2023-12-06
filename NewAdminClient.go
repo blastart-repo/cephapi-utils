@@ -51,14 +51,12 @@ func (c *NewClient) GetClusterInfo(clusterName string) (*proto.Cluster, error) {
 	return clr, nil
 }
 
-func ConnectgRPC(srvdata *SrvConnData) (*NewClient, error) {
-
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", srvdata.srvName, srvdata.srvPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
+func ConnectgRPC() (*grpc.ClientConn, error) {
+	var conn *grpc.ClientConn
+	conn, err := grpc.Dial("data-service:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
 
-	return &NewClient{
-		client: conn,
-	}, nil
+	return conn, nil
 }
