@@ -17,17 +17,13 @@ type Cluster struct {
 	EndpointURL  string `json:"endpoint_url" gorm:"unique"`
 }
 
-type NewClient struct {
-	client *grpc.ClientConn
-}
-
 type SrvConnData struct {
-	srvName string
-	srvPort string
+	SrvName string
+	SrvPort string
 }
 
-func (c *NewClient) NewAdminClient(clusterName string) (*admin.API, error) {
-	resp, err := c.GetClusterInfo(clusterName)
+func NewAdminClient(clusterName string) (*admin.API, error) {
+	resp, err := GetClusterInfo(clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -40,20 +36,32 @@ func (c *NewClient) NewAdminClient(clusterName string) (*admin.API, error) {
 
 }
 
-func (c *NewClient) GetClusterInfo(clusterName string) (*proto.Cluster, error) {
-	client := proto.NewClusterServiceClient(c.client)
+func GetClusterInfo(clusterName string) (*proto.Cluster, error) {
+	conn, err := ConnectgRPC()
+	if err != nil {
+		return nil, err
+	}
+	client := proto.NewClusterServiceClient(conn)
 
 	clr, err := client.GetCluster(context.Background(), &proto.ClusterIn{Clustername: clusterName})
 	if err != nil {
 		return nil, err
 	}
 
+	defer func(conn *grpc.ClientConn) {
+		err := conn.Close()
+		if err != nil {
+			return
+		}
+	}(conn)
+
 	return clr, nil
 }
 
 func ConnectgRPC() (*grpc.ClientConn, error) {
 	var conn *grpc.ClientConn
-	conn, err := grpc.Dial("data-service:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var srvdata *SrvConnData
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", srvdata.SrvName, srvdata.SrvPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
