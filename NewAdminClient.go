@@ -17,8 +17,8 @@ type Cluster struct {
 	EndpointURL  string `json:"endpoint_url" gorm:"unique"`
 }
 
-func NewAdminClient(clusterName string) (*admin.API, error) {
-	resp, err := GetClusterInfo(clusterName)
+func NewAdminClient(clusterName, address, port string) (*admin.API, error) {
+	resp, err := GetClusterInfo(clusterName, address, port)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +31,8 @@ func NewAdminClient(clusterName string) (*admin.API, error) {
 
 }
 
-func GetClusterInfo(clusterName string) (*proto.Cluster, error) {
-	conn, err := ConnectgRPC()
+func GetClusterInfo(clusterName, address, port string) (*proto.Cluster, error) {
+	conn, err := ConnectgRPC(address, port)
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +53,9 @@ func GetClusterInfo(clusterName string) (*proto.Cluster, error) {
 	return clr, nil
 }
 
-func ConnectgRPC() (*grpc.ClientConn, error) {
-	var conn *grpc.ClientConn
-	conn, err := grpc.Dial("cephapi-data:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+func ConnectgRPC(address, port string) (*grpc.ClientConn, error) {
+	serverAddress := fmt.Sprintf("%s:%s", address, port)
+	conn, err := grpc.Dial(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
