@@ -2,6 +2,7 @@ package cautils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/blastart-repo/cephapi-utils/proto"
 	"github.com/ceph/go-ceph/rgw/admin"
@@ -10,8 +11,9 @@ import (
 )
 
 type Connection struct {
-	Address string
-	Port    string
+	Address  string
+	Port     string
+	grpcConn *grpc.ClientConn
 }
 
 func NewConn(address, port string) *Connection {
@@ -21,19 +23,23 @@ func NewConn(address, port string) *Connection {
 	}
 }
 
-func (c *Connection) GetClusterInfo(clusterName string) (*proto.Cluster, error) {
-	conn, err := c.ConnectgRPC()
+func (c *Connection) ConnectgRPC() error {
+	serverAddress := fmt.Sprintf("%s:%s", c.Address, c.Port)
+	conn, err := grpc.Dial(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-	}(conn)
 
-	client := proto.NewClusterServiceClient(conn)
+	c.grpcConn = conn
+	return nil
+}
+
+func (c *Connection) GetClusterInfo(clusterName string) (*proto.Cluster, error) {
+	if c.grpcConn == nil {
+		return nil, errors.New("gRPC connection not initialized")
+	}
+
+	client := proto.NewClusterServiceClient(c.grpcConn)
 
 	clr, err := client.GetCluster(context.Background(), &proto.ClusterIn{Clustername: clusterName})
 	if err != nil {
@@ -43,17 +49,11 @@ func (c *Connection) GetClusterInfo(clusterName string) (*proto.Cluster, error) 
 	return clr, nil
 }
 
-func (c *Connection) ConnectgRPC() (*grpc.ClientConn, error) {
-	serverAddress := fmt.Sprintf("%s:%s", c.Address, c.Port)
-	conn, err := grpc.Dial(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, err
+func (c *Connection) NewAdminClient(clusterName string) (*admin.API, error) {
+	if c.grpcConn == nil {
+		return nil, errors.New("gRPC connection not initialized")
 	}
 
-	return conn, nil
-}
-
-func (c *Connection) NewAdminClient(clusterName string) (*admin.API, error) {
 	resp, err := c.GetClusterInfo(clusterName)
 	if err != nil {
 		return nil, err
@@ -65,4 +65,11 @@ func (c *Connection) NewAdminClient(clusterName string) (*admin.API, error) {
 	}
 
 	return client, nil
+}
+
+func (c *Connection) Close() error {
+	if c.grpcConn != nil {
+		return c.grpcConn.Close()
+	}
+	return nil
 }
