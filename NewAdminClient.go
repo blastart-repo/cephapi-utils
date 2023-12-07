@@ -2,75 +2,31 @@ package cautils
 
 import (
 	"context"
-	"errors"
-	"fmt"
-
 	"github.com/blastart-repo/cephapi-utils/proto"
 	"github.com/ceph/go-ceph/rgw/admin"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
-type Connection struct {
-	Address  string
-	Port     string
-	grpcConn *grpc.ClientConn
-}
-
-func NewConn(address, port string) *Connection {
-	return &Connection{
-		Address: address,
-		Port:    port,
-	}
-}
-
-func (c *Connection) ConnectgRPC() error {
-	serverAddress := fmt.Sprintf("%s:%s", c.Address, c.Port)
-	conn, err := grpc.Dial(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewAdminClient(address, port, clusterName string) (*admin.API, error) {
+	conn, err := ConnectgRPC(address, port)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	c.grpcConn = conn
-	return nil
-}
-
-func (c *Connection) GetClusterInfo(clusterName string) (*proto.Cluster, error) {
-	if c.grpcConn == nil {
-		return nil, errors.New("gRPC connection not initialized")
-	}
-
-	client := proto.NewClusterServiceClient(c.grpcConn)
-
+	client := proto.NewClusterServiceClient(conn)
 	clr, err := client.GetCluster(context.Background(), &proto.ClusterIn{Clustername: clusterName})
 	if err != nil {
 		return nil, err
 	}
-
-	return clr, nil
-}
-
-func (c *Connection) NewAdminClient(clusterName string) (*admin.API, error) {
-	if c.grpcConn == nil {
-		return nil, errors.New("gRPC connection not initialized")
-	}
-
-	resp, err := c.GetClusterInfo(clusterName)
+	defer func(conn *grpc.ClientConn) {
+		err := conn.Close()
+		if err != nil {
+			return
+		}
+	}(conn)
+	adm, err := admin.New(clr.GetEndpointurl(), clr.GetAccesskey(), clr.GetAccesssecret(), nil)
 	if err != nil {
 		return nil, err
 	}
+	return adm, nil
 
-	client, err := admin.New(resp.GetEndpointurl(), resp.GetAccesskey(), resp.GetAccesssecret(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
-func (c *Connection) Close() error {
-	if c.grpcConn != nil {
-		return c.grpcConn.Close()
-	}
-	return nil
 }
