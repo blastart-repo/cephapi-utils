@@ -2,6 +2,7 @@ package cautils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/blastart-repo/cephapi-utils/proto"
@@ -10,61 +11,66 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type Cluster struct {
-	ClusterName  string `json:"cluster_name" gorm:"unique,primaryKey"`
-	AccessKey    string `json:"access_key"`
-	AccessSecret string `json:"access_secret"`
-	EndpointURL  string `json:"endpoint_url" gorm:"unique"`
+type Connection struct {
+	Address  string
+	Port     string
+	grpcConn *grpc.ClientConn
 }
 
-type SrvConnData struct {
-	SrvName string
-	SrvPort string
+func NewConn(address, port string) *Connection {
+	return &Connection{
+		Address: address,
+		Port:    port,
+	}
 }
 
-func NewAdminClient(clusterName string) (*admin.API, error) {
-	resp, err := GetClusterInfo(clusterName)
+func (c *Connection) ConnectgRPC() error {
+	serverAddress := fmt.Sprintf("%s:%s", c.Address, c.Port)
+	conn, err := grpc.Dial(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	fmt.Println(resp)
-	client, err := admin.New(resp.GetEndpointurl(), resp.GetAccesskey(), resp.GetAccesssecret(), nil)
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
 
+	c.grpcConn = conn
+	return nil
 }
 
-func GetClusterInfo(clusterName string) (*proto.Cluster, error) {
-	conn, err := ConnectgRPC()
-	if err != nil {
-		return nil, err
+func (c *Connection) GetClusterInfo(clusterName string) (*proto.Cluster, error) {
+	if c.grpcConn == nil {
+		return nil, errors.New("gRPC connection not initialized")
 	}
-	client := proto.NewClusterServiceClient(conn)
+
+	client := proto.NewClusterServiceClient(c.grpcConn)
 
 	clr, err := client.GetCluster(context.Background(), &proto.ClusterIn{Clustername: clusterName})
 	if err != nil {
 		return nil, err
 	}
 
-	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
-		if err != nil {
-			return
-		}
-	}(conn)
-
 	return clr, nil
 }
 
-func ConnectgRPC() (*grpc.ClientConn, error) {
-	var conn *grpc.ClientConn
-	var srvdata *SrvConnData
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", srvdata.SrvName, srvdata.SrvPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (c *Connection) NewAdminClient(clusterName string) (*admin.API, error) {
+	if c.grpcConn == nil {
+		return nil, errors.New("gRPC connection not initialized")
+	}
+
+	resp, err := c.GetClusterInfo(clusterName)
 	if err != nil {
 		return nil, err
 	}
 
-	return conn, nil
+	client, err := admin.New(resp.GetEndpointurl(), resp.GetAccesskey(), resp.GetAccesssecret(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (c *Connection) Close() error {
+	if c.grpcConn != nil {
+		return c.grpcConn.Close()
+	}
+	return nil
 }
