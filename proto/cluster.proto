@@ -1,7 +1,7 @@
 syntax = "proto3";
-package proto;
+package cluster;
 
-option go_package="./proto";
+option go_package="./cluster";
 
 message Cluster {
   string clustername = 1;

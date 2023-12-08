@@ -19,11 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ClusterService_GetCluster_FullMethodName    = "/proto.ClusterService/GetCluster"
-	ClusterService_ListClusters_FullMethodName  = "/proto.ClusterService/ListClusters"
-	ClusterService_AddCluster_FullMethodName    = "/proto.ClusterService/AddCluster"
-	ClusterService_UpdateCluster_FullMethodName = "/proto.ClusterService/UpdateCluster"
-	ClusterService_RemoveCluster_FullMethodName = "/proto.ClusterService/RemoveCluster"
+	ClusterService_GetCluster_FullMethodName    = "/cluster.ClusterService/GetCluster"
+	ClusterService_ListClusters_FullMethodName  = "/cluster.ClusterService/ListClusters"
+	ClusterService_AddCluster_FullMethodName    = "/cluster.ClusterService/AddCluster"
+	ClusterService_UpdateCluster_FullMethodName = "/cluster.ClusterService/UpdateCluster"
+	ClusterService_RemoveCluster_FullMethodName = "/cluster.ClusterService/RemoveCluster"
 )
 
 // ClusterServiceClient is the client API for ClusterService service.
@@ -254,7 +254,7 @@ func _ClusterService_RemoveCluster_Handler(srv interface{}, ctx context.Context,
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ClusterService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.ClusterService",
+	ServiceName: "cluster.ClusterService",
 	HandlerType: (*ClusterServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

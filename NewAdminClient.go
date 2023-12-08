@@ -12,6 +12,7 @@ func NewAdminClient(address, port, clusterName string) (*admin.API, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	client := proto.NewClusterServiceClient(conn)
 	clr, err := client.GetCluster(context.Background(), &proto.ClusterIn{Clustername: clusterName})
 	if err != nil {
@@ -23,10 +24,12 @@ func NewAdminClient(address, port, clusterName string) (*admin.API, error) {
 			return
 		}
 	}(conn)
+
 	adm, err := admin.New(clr.GetEndpointurl(), clr.GetAccesskey(), clr.GetAccesssecret(), nil)
 	if err != nil {
 		return nil, err
 	}
+
 	return adm, nil
 
 }
