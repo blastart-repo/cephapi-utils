@@ -6,23 +6,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func ConnectgRPC(address, port string) (*grpc.ClientConn, error) {
-	serverAddress := fmt.Sprintf("%s:%s", address, port)
-	var conn *grpc.ClientConn
-	conn, err := grpc.Dial(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, err
-	}
-
-	return conn, nil
-}
-
-/*
 type Connection struct {
-	grpcConn *grpc.ClientConn
+	GrpcConn *grpc.ClientConn
 }
 
-// NewConn initializes a new connection and automatically connects to gRPC.
+// NewConn initializes a new connectionGRPC and automatically connects to gRPC.
 func NewConn(address, port string) (*Connection, error) {
 	conn := &Connection{}
 
@@ -40,14 +28,16 @@ func (c *Connection) ConnectgRPC(address, port string) error {
 		return err
 	}
 
-	c.grpcConn = conn
+	c.GrpcConn = conn
 	return nil
 }
 
-func (c *Connection) Close() {
-    if c.grpcConn != nil {
-        c.grpcConn.Close()
-    }
+func (c *Connection) Close() error {
+	if c.GrpcConn != nil {
+		err := c.GrpcConn.Close()
+		if err != nil {
+			return fmt.Errorf("error closing gRPC connection: %w", err)
+		}
+	}
+	return nil
 }
-
-*/
