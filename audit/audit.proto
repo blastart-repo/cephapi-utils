@@ -1,0 +1,21 @@
+syntax = "proto3";
+package audit;
+
+option go_package="./audit";
+
+message LogMessage {
+  string Status = 1;
+  string Endpoint = 2;
+  string Method = 3;
+  string Description = 4;
+  string User = 5;
+  string IP = 6;
+  string Timestamp = 7;
+}
+
+message Empty{
+}
+
+service AuditService {
+  rpc SendLog(LogMessage) returns (Empty) {}
+}

@@ -4,7 +4,7 @@
 // 	protoc        v4.25.0
 // source: cluster.proto
 
-package proto
+package cluster
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

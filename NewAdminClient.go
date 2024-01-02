@@ -2,14 +2,14 @@ package cautils
 
 import (
 	"context"
-	"github.com/blastart-repo/cephapi-utils/proto"
+	"github.com/blastart-repo/cephapi-utils/cluster"
 	"github.com/ceph/go-ceph/rgw/admin"
 	"google.golang.org/grpc"
 )
 
 func NewAdminClient(address, port, clusterName string, conn *grpc.ClientConn) (*admin.API, error) {
-	client := proto.NewClusterServiceClient(conn)
-	clr, err := client.GetCluster(context.Background(), &proto.ClusterIn{Clustername: clusterName})
+	client := cluster.NewClusterServiceClient(conn)
+	clr, err := client.GetCluster(context.Background(), &cluster.ClusterIn{Clustername: clusterName})
 	if err != nil {
 		return nil, err
 	}
