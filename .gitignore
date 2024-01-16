@@ -1,4 +1,4 @@
-config/conf.yaml
+config/config.yaml
 data/
 dist/
-*.yamlgit
+*.yaml
