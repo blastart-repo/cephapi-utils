@@ -1,0 +1,4 @@
+config/conf.yaml
+data/
+dist/
+*.yamlgit

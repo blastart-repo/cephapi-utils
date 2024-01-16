@@ -41,12 +41,20 @@ func CreateLog(c audit.AuditServiceClient) gin.HandlerFunc {
 			}
 		}
 
+		userID := ""
+		sub, err := UserIDRequest(req)
+		if err != nil {
+			fmt.Printf("error geting the userID: %v\n", err)
+		} else {
+			userID = sub
+		}
+
 		logIn := audit.LogMessage{
 			Status:      "",
 			Endpoint:    req.URL.Path,
 			Method:      req.Method,
 			Description: sb.String(),
-			User:        "",
+			User:        userID,
 			IP:          g.ClientIP(),
 			Timestamp:   time.Now().String(),
 		}
