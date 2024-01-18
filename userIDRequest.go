@@ -10,14 +10,6 @@ import (
 	"strings"
 )
 
-func init() {
-	var err error
-	config.Data, err = config.LoadConfig()
-	if err != nil {
-		fmt.Println(fmt.Sprintf("Reading UserIdRequest config failed: %s", err.Error()))
-	}
-}
-
 func UserIDRequest(req *http.Request) (string, error) {
 
 	bearerToken, err := extractBearerToken(req)
@@ -25,9 +17,7 @@ func UserIDRequest(req *http.Request) (string, error) {
 		return "", err
 	}
 
-	url := config.Data.UidUrl
-
-	newReq, err := http.NewRequest("GET", url, nil)
+	newReq, err := http.NewRequest("GET", config.Data.UidUrl, nil)
 	if err != nil {
 		fmt.Println("Error creating UserIDRequest:", err)
 		return "", err
