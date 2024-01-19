@@ -3,7 +3,6 @@ package cautils
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/blastart-repo/cephapi-utils/audit"
 	"github.com/gin-gonic/gin"
@@ -13,7 +12,7 @@ import (
 	"time"
 )
 
-func CreateLog(c audit.AuditServiceClient) gin.HandlerFunc {
+func CreateLog(c audit.AuditServiceClient, idUrl string) gin.HandlerFunc {
 	return func(g *gin.Context) {
 		req := g.Request
 		pathvars := strings.Split(req.URL.Path, "/")[2:]
@@ -41,12 +40,9 @@ func CreateLog(c audit.AuditServiceClient) gin.HandlerFunc {
 			}
 		}
 
-		userID := ""
-		sub, err := UserIDRequest(req)
+		userID, err := UserIDRequest(req, idUrl)
 		if err != nil {
-			fmt.Printf("error geting the userID: %v\n", err)
-		} else {
-			userID = sub
+			g.Error(fmt.Errorf("error geting the userID: %w", err))
 		}
 
 		logIn := audit.LogMessage{
@@ -61,7 +57,7 @@ func CreateLog(c audit.AuditServiceClient) gin.HandlerFunc {
 
 		_, err = c.SendLog(context.Background(), &logIn)
 		if err != nil {
-			g.AbortWithError(http.StatusInternalServerError, errors.New(fmt.Sprintf("error writing audit log: %s", err.Error())))
+			g.AbortWithError(http.StatusInternalServerError, fmt.Errorf("error writing audit log: %w", err)) //fmt.Errorf
 			return
 		}
 

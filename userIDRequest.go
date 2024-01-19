@@ -4,23 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/blastart-repo/cephapi-utils/config"
 	"io"
 	"net/http"
 	"strings"
 )
 
-func UserIDRequest(req *http.Request) (string, error) {
+func UserIDRequest(req *http.Request, idUrl string) (string, error) {
 
 	bearerToken, err := extractBearerToken(req)
 	if err != nil {
 		return "", err
 	}
 
-	newReq, err := http.NewRequest("GET", config.Data.UidUrl, nil)
+	newReq, err := http.NewRequest("GET", idUrl, nil)
 	if err != nil {
-		fmt.Println("Error creating UserIDRequest:", err)
-		return "", err
+		return "", fmt.Errorf("error creating UserIDRequest: %w", err)
 	}
 
 	newReq.Header.Set("Authorization", "Bearer "+bearerToken)
@@ -28,30 +26,30 @@ func UserIDRequest(req *http.Request) (string, error) {
 	client := http.Client{}
 	resp, err := client.Do(newReq)
 	if err != nil {
-		fmt.Println("Error making UserIDRequest:", err)
-		return "", err
+		return "", fmt.Errorf("error making UserIDRequest: %w", err)
 	}
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			fmt.Printf("Error closing UserIDRequest response body: %v\n", err)
 		}
 	}(resp.Body)
+
 	var userInfo struct {
 		Sub string `json:"sub"`
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&userInfo)
 	if err != nil {
-		fmt.Printf("Error decoding response body: %v\n", err)
-		return "", err
+		return "", fmt.Errorf("error decoding response body: %w", err)
 	}
 
 	if userInfo.Sub != "" {
 		return userInfo.Sub, nil
 	}
 
-	return "", errors.New("user id not found in response")
+	return "", errors.New("user id not found in the response body")
 }
 
 func extractBearerToken(req *http.Request) (string, error) {
