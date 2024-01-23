@@ -52,12 +52,12 @@ func CreateLog(c audit.AuditServiceClient, idUrl string) gin.HandlerFunc {
 			Description: sb.String(),
 			User:        userID,
 			IP:          g.ClientIP(),
-			Timestamp:   time.Now().String(),
+			Timestamp:   time.Now().UTC().String(),
 		}
 
 		_, err = c.SendLog(context.Background(), &logIn)
 		if err != nil {
-			g.AbortWithError(http.StatusInternalServerError, fmt.Errorf("error writing audit log: %w", err)) //fmt.Errorf
+			g.AbortWithError(http.StatusInternalServerError, fmt.Errorf("error writing audit log: %w", err))
 			return
 		}
 
